@@ -1,0 +1,292 @@
+<h1>DOKUMEMO</h1>
+<p>読書の学びを、声で残す。</p>
+<h2>今日の読書メモ</h2>
+<div>
+  <input id="bookTitle" type="text" placeholder="本のタイトルを入力">
+</div>
+
+<div>
+  <textarea id="bookLearning" rows="8" cols="30" placeholder="この本から得た学びを入力"></textarea>
+</div>
+
+<div>
+  <button id="voiceButton">🎤 音声入力を開始</button>
+</div>
+
+<div>
+  <button id="formatButton">✨ 文章を整える</button>
+</div>
+
+<div id="formatResult"></div>
+
+<button id="saveButton">保存する</button>
+
+<h2>保存した読書メモ</h2>
+<div id="bookList"></div>
+
+
+<script>
+let editingIndex = -1;
+
+let savedBooks = JSON.parse(localStorage.getItem('books') || '[]');
+
+// 保存済みの読書メモを表示する
+savedBooks.forEach(function(book, index) {
+
+  let card = document.createElement('div');
+  card.className = 'bookCard';
+
+  let titleElement = document.createElement('strong');
+  titleElement.textContent = book.title;
+
+  let learningElement = document.createElement('p');
+  learningElement.textContent = book.learning;
+
+  // 編集ボタン
+  let editButton = document.createElement('button');
+  editButton.textContent = '編集する';
+
+  editButton.addEventListener('click', function() {
+    editingIndex = index;
+
+    document.getElementById('bookTitle').value = book.title;
+    document.getElementById('bookLearning').value = book.learning;
+
+    document.getElementById('saveButton').textContent = '変更を保存する';
+  });
+
+  // 削除ボタン
+  let deleteButton = document.createElement('button');
+  deleteButton.textContent = '削除する';
+
+  deleteButton.addEventListener('click', function() {
+    let answer = confirm('本当に削除しますか？');
+
+    if (answer) {
+      let books = JSON.parse(localStorage.getItem('books') || '[]');
+
+      books.splice(index, 1);
+
+      localStorage.setItem('books', JSON.stringify(books));
+
+      location.reload();
+    }
+  });
+
+  // ボタンを右下に並べる
+  let buttonArea = document.createElement('div');
+  buttonArea.className = 'buttonArea';
+
+  buttonArea.appendChild(editButton);
+  buttonArea.appendChild(deleteButton);
+
+  // カードを完成させる
+  card.appendChild(titleElement);
+  card.appendChild(learningElement);
+  card.appendChild(buttonArea);
+
+  document.getElementById('bookList').appendChild(card);
+});
+
+// 保存ボタン
+document.getElementById('saveButton').addEventListener('click', function() {
+
+  let title = document.getElementById('bookTitle').value;
+  let learning = document.getElementById('bookLearning').value;
+
+  if (title.trim() === '' || learning.trim() === '') {
+    alert('タイトルと学びの両方を入力してください！');
+    return;
+  }
+
+  let book = {
+    title: title,
+    learning: learning
+  };
+
+  let books = JSON.parse(localStorage.getItem('books') || '[]');
+
+  if (editingIndex === -1) {
+    // 新規保存
+    books.push(book);
+  } else {
+    // 編集した内容を上書き
+    books[editingIndex] = book;
+  }
+
+  localStorage.setItem('books', JSON.stringify(books));
+
+  alert('読書メモを保存しました！');
+
+  location.reload();
+});
+
+let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+  let recognition = new SpeechRecognition();
+  let isListening = false;
+
+  recognition.lang = 'ja-JP';
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  let voiceButton = document.getElementById('voiceButton');
+
+  voiceButton.addEventListener('click', function() {
+    if (isListening) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
+  });
+
+  recognition.onstart = function() {
+    isListening = true;
+    voiceButton.textContent = '■ 音声入力を停止';
+  };
+
+  recognition.onresult = function(event) {
+    let spokenText = '';
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        spokenText += event.results[i][0].transcript;
+      }
+    }
+
+    if (spokenText !== '') {
+      document.getElementById('bookLearning').value += spokenText + '\n';
+    }
+  };
+
+  recognition.onend = function() {
+    isListening = false;
+    voiceButton.textContent = '🎤 音声入力を開始';
+  };
+
+  recognition.onerror = function(event) {
+    console.error('音声認識エラー:', event.error);
+  };
+
+} else {
+  document.getElementById('voiceButton').disabled = true;
+  alert('このブラウザは音声入力に対応していません。');
+}
+
+document.getElementById('formatButton').addEventListener('click', function() {
+
+  let originalText = document.getElementById('bookLearning').value;
+
+  if (originalText.trim() === '') {
+    alert('先に文章を入力してください！');
+    return;
+  }
+
+  let formattedText = originalText
+    .replace(/えーっと[、,\s]*/g, '')
+    .replace(/えっと[、,\s]*/g, '')
+    .replace(/なんか[、,\s]*/g, '')
+    .replace(/ {2,}/g, ' ')
+    .trim();
+
+  document.getElementById('formatResult').textContent = formattedText;
+});
+
+</script>
+
+
+<style>
+  #bookList {
+    white-space: pre-line;
+  }
+  
+body {
+  background-color: #F4F7FF;
+  color: #29365F;
+  font-family: sans-serif;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+
+  h1 {
+    color: #6E56D9;
+  }
+  
+#saveButton {
+  background-color: #6E56D9;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#bookTitle,
+#bookLearning {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 2px solid #DDD5F9;
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.bookCard {
+  background-color: #FFF2DE;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border-left: 5px solid #F2A94A;
+}
+
+.bookCard strong {
+  display: block;
+  font-size: 20px;
+  color: #A65F13;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #F1D9B2;
+}
+
+.bookCard p {
+  font-size: 16px;
+  line-height: 1.7;
+  margin-bottom: 0;
+  white-space: pre-wrap;
+}
+
+.bookCard button {
+  display: block;
+  margin-left: auto;
+  margin-top: 12px;
+  background-color: white;
+  color: #B73535;
+  border: 1px solid #E5A0A0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.buttonArea {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.bookCard .buttonArea button {
+  margin: 0;
+}
+
+.bookCard .buttonArea button:first-child {
+  color: #6E56D9;
+  border-color: #C3B6FF;
+}
+
+</style>
