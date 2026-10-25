@@ -1,3 +1,5 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <h1>DOKUMEMO</h1>
 <p>読書の学びを、声で残す。</p>
 <h2>今日の読書メモ</h2>
@@ -287,6 +289,38 @@ body {
 .bookCard .buttonArea button:first-child {
   color: #6E56D9;
   border-color: #C3B6FF;
+}
+
+#voiceButton,
+#formatButton,
+#saveButton {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 52px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  font-size: 17px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+#voiceButton {
+  background-color: #6E56D9;
+  color: white;
+  border: none;
+}
+
+#formatButton {
+  background-color: #EEE8FF;
+  color: #6E56D9;
+  border: 1px solid #C3B6FF;
+}
+
+.bookCard .buttonArea button {
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 15px;
 }
 
 </style>
