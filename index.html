@@ -16,6 +16,27 @@
 <h2>保存した読書メモ</h2>
 <div id="bookList"></div>
 
+<details class="settingsArea">
+  <summary>⚙️ 設定・データ管理</summary>
+
+  <div class="settingsContent">
+    <h3>あなたの読書記録を、大切に。</h3>
+
+    <p>DOKUMEMOの読書記録は、お使いのブラウザに保存されています。</p>
+
+    <p>ブラウザのデータ削除や端末の故障などによって、記録が消えてしまう可能性があります。</p>
+
+    <p>「この記録だけは絶対に残しておきたい！」という方は、定期的にバックアップを取っておくと安心です。</p>
+
+    <p>スマホからも保存できますが、ファイルを整理・保管しやすいパソコンでのバックアップもおすすめです。</p>
+
+    <div class="backupArea">
+      <button id="backupButton">📥 バックアップを保存</button>
+      <button id="restoreButton">📤 バックアップを復元</button>
+      <input type="file" id="backupFile" accept=".json" hidden>
+    </div>
+  </div>
+</details>
 
 <script>
 let editingIndex = -1;
@@ -111,6 +132,111 @@ document.getElementById('saveButton').addEventListener('click', function() {
   alert('読書メモを保存しました！');
 
   location.reload();
+});
+
+document.getElementById('backupButton').addEventListener('click', function() {
+
+  let books = JSON.parse(localStorage.getItem('books') || '[]');
+
+  if (books.length === 0) {
+    alert('バックアップする読書メモがありません！');
+    return;
+  }
+
+  let data = JSON.stringify(books, null, 2);
+
+  let blob = new Blob([data], { type: 'application/json' });
+
+  let url = URL.createObjectURL(blob);
+
+  let link = document.createElement('a');
+  link.href = url;
+  link.download = 'DOKUMEMO-backup.json';
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('restoreButton').addEventListener('click', function() {
+  document.getElementById('backupFile').click();
+});
+
+document.getElementById('backupFile').addEventListener('change', async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const backupBooks = JSON.parse(text);
+
+    // バックアップの基本的な形式を確認
+    if (
+      !Array.isArray(backupBooks) ||
+      !backupBooks.every(book =>
+        book !== null &&
+        typeof book === 'object' &&
+        !Array.isArray(book) &&
+        typeof book.title === 'string' &&
+        typeof book.learning === 'string'
+      )
+    ) {
+      alert('正しいDOKUMEMOのバックアップファイルではありません。');
+      return;
+    }
+
+    const currentBooks = JSON.parse(
+      localStorage.getItem('books') || '[]'
+    );
+
+    if (!Array.isArray(currentBooks)) {
+      throw new Error('保存データの形式が不正です');
+    }
+
+    // 同じタイトル・内容の記録は追加しない
+    const mergedBooks = [...currentBooks];
+    let addedCount = 0;
+
+    backupBooks.forEach(book => {
+      const exists = mergedBooks.some(saved =>
+        saved.title === book.title &&
+        saved.learning === book.learning
+      );
+
+      if (!exists) {
+        mergedBooks.push(book);
+        addedCount++;
+      }
+    });
+
+    if (addedCount === 0) {
+      alert('追加する新しい読書メモはありませんでした。');
+      return;
+    }
+
+    const ok = confirm(
+      `バックアップから${addedCount}件の読書メモを追加します。\n` +
+      '現在の読書メモは削除しません。\n\n' +
+      '復元してもよろしいですか？'
+    );
+
+    if (!ok) return;
+
+    localStorage.setItem('books', JSON.stringify(mergedBooks));
+
+    alert(`${addedCount}件の読書メモを復元しました！`);
+
+    // 画面を更新して復元結果を表示
+    location.reload();
+
+  } catch (error) {
+    console.error(error);
+    alert('読み込みに失敗しました。ファイルを確認してください。');
+  } finally {
+    event.target.value = '';
+  }
 });
 
 </script>
@@ -281,6 +407,65 @@ body {
   height: auto;
   border-radius: 14px;
   margin-bottom: 24px;
+}
+
+.settingsArea {
+  background-color: white;
+  border: 1px solid #DDD5F9;
+  border-radius: 14px;
+  margin-top: 24px;
+  overflow: hidden;
+}
+
+.settingsArea summary {
+  padding: 16px;
+  font-size: 17px;
+  font-weight: bold;
+  color: #6E56D9;
+  cursor: pointer;
+}
+
+.settingsContent {
+  padding: 0 16px 16px;
+  color: #29365F;
+}
+
+.settingsContent h3 {
+  font-size: 17px;
+  margin-top: 12px;
+}
+
+.settingsContent p {
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.backupArea {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.backupArea button {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+#backupButton {
+  background-color: #6E56D9;
+  color: white;
+  border: none;
+}
+
+#restoreButton {
+  background-color: #EEE8FF;
+  color: #6E56D9;
+  border: 1px solid #C3B6FF;
 }
 
 </style>
