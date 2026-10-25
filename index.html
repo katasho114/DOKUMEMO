@@ -11,16 +11,6 @@
   <textarea id="bookLearning" rows="8" cols="30" placeholder="この本から得た学びを入力"></textarea>
 </div>
 
-<div>
-  <button id="voiceButton">🎤 音声入力を開始</button>
-</div>
-
-<div>
-  <button id="formatButton">✨ 文章を整える</button>
-</div>
-
-<div id="formatResult"></div>
-
 <button id="saveButton">保存する</button>
 
 <h2>保存した読書メモ</h2>
@@ -121,78 +111,6 @@ document.getElementById('saveButton').addEventListener('click', function() {
   alert('読書メモを保存しました！');
 
   location.reload();
-});
-
-let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-if (SpeechRecognition) {
-  let recognition = new SpeechRecognition();
-  let isListening = false;
-
-  recognition.lang = 'ja-JP';
-  recognition.continuous = true;
-  recognition.interimResults = false;
-
-  let voiceButton = document.getElementById('voiceButton');
-
-  voiceButton.addEventListener('click', function() {
-    if (isListening) {
-      recognition.stop();
-    } else {
-      recognition.start();
-    }
-  });
-
-  recognition.onstart = function() {
-    isListening = true;
-    voiceButton.textContent = '■ 音声入力を停止';
-  };
-
-  recognition.onresult = function(event) {
-    let spokenText = '';
-
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      if (event.results[i].isFinal) {
-        spokenText += event.results[i][0].transcript;
-      }
-    }
-
-    if (spokenText !== '') {
-      document.getElementById('bookLearning').value += spokenText + '\n';
-    }
-  };
-
-  recognition.onend = function() {
-    isListening = false;
-    voiceButton.textContent = '🎤 音声入力を開始';
-  };
-
-  recognition.onerror = function(event) {
-    console.error('音声認識エラー:', event.error);
-  };
-
-} else {
-  document.getElementById('voiceButton').disabled = true;
-  alert('このブラウザは音声入力に対応していません。');
-}
-
-document.getElementById('formatButton').addEventListener('click', function() {
-
-  let originalText = document.getElementById('bookLearning').value;
-
-  if (originalText.trim() === '') {
-    alert('先に文章を入力してください！');
-    return;
-  }
-
-  let formattedText = originalText
-    .replace(/えーっと[、,\s]*/g, '')
-    .replace(/えっと[、,\s]*/g, '')
-    .replace(/なんか[、,\s]*/g, '')
-    .replace(/ {2,}/g, ' ')
-    .trim();
-
-  document.getElementById('formatResult').textContent = formattedText;
 });
 
 </script>
